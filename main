@@ -1,0 +1,314 @@
+import os
+import time as chrono
+import random as r
+import math as m
+import numpy as np
+
+screensize ={"x" : 0 , "y" : 0 }  
+screensize["x"]= os.get_terminal_size().columns-1
+screensize["y"]= os.get_terminal_size().lines
+
+#since pixels are not 1:1 overall image needs to be shrunk. usually x is keept and y is squished down since pixels are taller
+
+yshrink = 0.75
+
+plane = {"nx": -5, "px": 5, "ny" : -2, "py" : 2}
+
+def visible(x, y):
+	if(x > plane["px"] or x < plane["nx"] or y > plane["py"] or y < plane["ny"]):
+		return False
+	else: 
+		return True
+
+
+def map(input, input_start, input_end, output_start,output_end):
+	return output_start + ((output_end - output_start) / (input_end - input_start)) * (input - input_start)
+
+def mts(x, y):
+	if(not visible(x,y)):
+		return None
+	else:
+		rv = []
+		rv.insert(0,int(map(y, plane["py"], plane["ny"], 0, screensize["y"])))
+		rv.insert(0,int(map(x, plane["nx"], plane["px"], 0, screensize["x"])))
+		return rv
+
+#clear screen, hide cursor
+print("\033[2J \033[?25l")
+
+
+class Vertex:
+	def __init__(self, x, y, z):
+		self.x = x
+		self.y = y
+		self.z = z
+		self.visible = True
+		self.sx = None
+		self.sy = None
+		self.sz = None
+
+		self.px = None
+		self.py = None
+		self.pz = None
+
+		self.psx = None
+		self.psy = None
+		self.psz = None
+		
+		self.depth = 0
+
+		self.color = "\033[38;2;0;0;255m"
+
+		self.type = "vertex"
+
+		if(not visible(x,y)):
+			self.visible = False
+		else:
+			self.psx = self.sx
+			self.psy = self.sy
+			self.psz = 0
+			self.sx = int( map(x, plane["nx"], plane["px"], 0, screensize["x"]))
+			self.sy = int(map(y*yshrink, plane["py"], plane["ny"], 0, screensize["y"]))
+			self.sz = 0
+
+	def setColor(self, r, g, b):
+		self.color = f"\033[38;2;{r};{g};{b}m"
+
+	def setX(self,x):
+		self.px = self.x
+		self.x = x
+	
+	def setY(self,y):
+		self.py = self.y
+		self.y = y
+	
+	def setZ(self,z):
+		self.pz = self.z
+		self.z = z
+	
+	def getX(self):
+		return self.x
+	
+	def getY(self):
+		return self.y
+	
+	def getZ(self):
+		return self.z
+
+	def updateSelf(self):
+		if(not visible(self.x, self.y)):
+			self.visible = False
+		else:
+			self.psx = self.sx
+			self.psy = self.sy
+			self.psz = 0
+			self.visible = True
+			self.sx = int( map(self.x, plane["nx"], plane["px"], 0, screensize["x"]))
+			self.sy = int(map(self.y*yshrink, plane["py"], plane["ny"], 0, screensize["y"]))
+			self.sz = 0
+
+
+class Line:
+	def __init__(self):
+		self.v1 = None
+		self.v2 = None
+		self.dx = None
+		self.dy = None
+		self.stepResolution = 1
+		self.visible = False
+		self.type = "line"
+		self.lenght = 0
+		self.color = "\033[38;2;0;255;0m"
+		self.depth = 0
+	def setEnds(self, v1, v2):
+		self.v1 = v1
+		self.v2 = v2
+		self.lenght = m.sqrt((self.v1.x-self.v2.x)**2 + (self.v1.y-self.v2.y)**2)
+		self.calcSlope()
+		self.visCheck()
+
+
+
+	def calcSlope(self):
+		self.stepResolution = self.lenght
+		self.dx = (self.v1.x - self.v2.x)/self.stepResolution
+		self.dy = (self.v1.y - self.v2.y)/self.stepResolution
+	
+	def visCheck(self):
+		if( not self.v1.visible and not self.v2.visible):
+			self.visible = False
+		else:
+			self.visible = True
+	
+	def setColor(self, r, g, b):
+		self.color = f"\033[38;2;{r};{g};{b}m"
+
+class Tri:
+	def __init__(self):
+		self.l1 = None
+		self.l2 = None
+		self.l3 = None
+		self.depth = 0
+		self.color = "\033[38;2;255;0m"
+		self.type = "triangle"
+		self.visible = True
+	def setEdges(self, x, y, z):
+		if(x.v2 == y.v1 and y.v2 == z.v1 and z.v2 == x.v1):
+			self.l1 = x
+			self.l2 = y
+			self.l3 = z
+		else:
+			raise("non closed triangle")
+	def setColor(self, r, g, b):
+		self.color = f"\033[38;2;{r};{g};{b}m"
+
+#scene gets drawn by depth. each vertex, line or triagnle has its depht not to be mixed with Z value. 
+#where Z is its position in space depth tells program when to draw it to screen.
+#smaller values get drawn first. so if a 2 identially positioned and shaped triangles get drawn
+# 					triangle 1 is red and has depth of 0
+#					tringle 2 is blue and has depth of 1
+#					trig2 will be visible since 1 gets drawn first than gets ovveriten by triangle 2 which has bigger depth. 
+
+time = -5
+scene = []
+updates = []
+
+
+l1 = Line()
+l2 = Line()
+l3 = Line()
+
+v1 = Vertex(0,0,0)
+v2 = Vertex(1,0,0)
+v3 = Vertex(0,1,0)
+v4 = Vertex(2,1,0)
+v5 = Vertex(0,2,0)
+v6 = Vertex(3,2,0)
+
+
+sineV = Vertex(-5, 0, 0)
+cosV = Vertex(-5, 0, 0)
+tanV = Vertex(-5, 0, 0)
+
+
+
+
+sineV.setColor(255,0,0)
+cosV.setColor(0,255,0)
+tanV.setColor(255,255,0)
+
+scene.insert(0, sineV)
+scene.insert(0, cosV)
+scene.insert(0, tanV)
+
+
+
+l1.setEnds(v1,v2)
+l2.setEnds(v3,v4)
+l3.setEnds(v5,v6)
+
+l4 = Line()
+l4.setEnds(Vertex(-1, 1, 0), Vertex(-1, -1, 0))
+l5 = Line()
+l5.setEnds(Vertex(-1, -1, 0), Vertex(1, -1, 0))
+l6 = Line()
+l6.setEnds(Vertex(1, -1, 0), Vertex(1, 1, 0))
+l7 = Line()
+l7.setEnds(Vertex(1, 1, 0), Vertex(-1, 1, 0))
+
+
+
+
+
+
+l1.calcSlope()
+
+scene.insert(0,l1)
+def updatePoints():
+	l1.v2.setX(l1.lenght* m.cos(time%360))
+	l1.v2.setY(l1.lenght* m.sin(time%360))
+	l1.calcSlope()
+	l1.visCheck()
+	
+	sineV.setX(time)
+	sineV.setY(m.sin(time))
+	sineV.updateSelf()
+	
+	cosV.setX(time)
+	cosV.setY(m.cos(time))
+	cosV.updateSelf()
+
+	tanV.setX(time)
+	tanV.setY(m.tan(time))
+	tanV.updateSelf()
+def placePoint(sx, sy):
+	print(f"\033[{sy};{sx}H", end="")
+	print("\u2588", end="")
+	ssx = screensize["x"]
+	ssy = screensize["y"]
+
+	print(f"\033[{ssx};{ssy}H", end="")
+
+
+def plotLine(i):
+	for j in np.arange(0, i.lenght, 0.05):
+		planeX = i.v1.x +( j * i.dx)
+		planeY = i.v1.y +( j * i.dy) * yshrink
+		
+		screenPoint = mts(planeX, planeY)
+		if(not screenPoint == None):
+			placePoint(screenPoint[0],screenPoint[1])
+
+
+
+def drawpoints():
+	print("\033[?25l", end ="")
+	print("\033[30m", end ="")
+	#drawing points, lines etc
+	
+	for i in scene:
+		if i.visible:
+			match i.type:
+				case "vertex":
+					print(i.color, end = "")
+					placePoint(i.sx, i.sy)
+					print("\033[30m", end="")
+
+				case "line":
+					print(i.color, end="")
+					plotLine(i)
+				case "triangle":
+					print(i.color, end="")
+					refPoint = i.l1.v1
+					refLine = i.l2
+
+					for j in np.arange(0,refLine.lenght, 0.05):
+						planeX = refLine.v1.x+(j*refLine.dx)
+						planeY = refLine.v1.y+(j*refLine.dy)
+						tmpLine = Line();
+						tmpV = Vertex(planeX, planeY, 0)
+						tmpLine.setEnds(tmpV, refPoint)
+						tmpLine.calcSlope()
+
+						for k in np.arange(0, tmpLine.lenght, 0.05):
+							planex = tmpLine.v1.x+(k*tmpLine.dx)
+							planey = tmpLine.v1.y+(k*tmpLine.dy)
+							screenPoint = mts(planex, planey)
+							placePoint(screenPoint[0],screenPoint[1])
+
+
+	#cleanup (setting unused pixels black
+	#for i in scene:
+	#	if i.visible:
+	#		match i.type:
+	#			case "vertex":
+	#				print(f"\033[{i.psy};{i.psx}H", end="")
+	#				print("\u2588", end="")
+	#			#todo cleanup for lines
+	#			#todo cleanup for triangles
+
+
+while(True):
+	drawpoints()
+	updatePoints()
+	time += 0.001
