@@ -1,36 +1,36 @@
-This is a simple graphics library made to work inside most terminals that support ansi escape codes.  
-It currently supports vertecies, lines and triangles from which more complex shapes can be built up.  
-It requires further optimizations since drawing big shapes causes significant lag.
+This is a simple graphics library made to work inside most terminals that support ansi escape codes.  <br />
+It currently supports vertecies, lines and triangles from which more complex shapes can be built up.  <br />
+It requires further optimizations since drawing big shapes causes significant lag.<br />
+<br />
+How to use:<br />
+  To create a point on screen<br />
+    -create new Vertex object passing xyz coordinates as constructor parameters.<br />
+    -call vertex.updateSelf()<br />
+    -add the vertex into scene array<br />
+    -call drawpoints function which will display all objects from the scene array. <br />
+    <br />
+  To create a line<br />
+    -create 2 new Vertecies as shown above and than create a Line object without any constructor parameters<br />
+    -call line.setEnds() and pass 2 vertex objects as parameters (the 2 ends of the line)<br />
+    -call line.visCheck()<br />
+    -call line.calcSlope()<br />
+    -add the line to scene array and call drawpoints()<br />
+    <br />
+  To create a triangle<br />
+    -create 3 points as shown above,<br />
+    -create 3 lines as shown above,<br />
+    -createa  Tri object without constructor parameters,<br />
+    -call tir.setEdges() passing the 3 created lines as parameters. The 3 lines must form an closed triangle else exception is raised.<br />
+    -add the triangle  to scene  and call drawpoints()  <br />
+<br />
 
-How to use:
-  To create a point on screen
-    -create new Vertex object passing xyz coordinates as constructor parameters.
-    -call vertex.updateSelf()
-    -add the vertex into scene array
-    -call drawpoints function which will display all objects from the scene array. 
-    
-  To create a line
-    -create 2 new Vertecies as shown above and than create a Line object without any constructor parameters
-    -call line.setEnds() and pass 2 vertex objects as parameters (the 2 ends of the line)
-    -call line.visCheck()
-    -call line.calcSlope()
-    -add the line to scene array and call drawpoints()
-    
-  To create a triangle
-    -create 3 points as shown above,
-    -create 3 lines as shown above,
-    -createa  Tri object without constructor parameters,
-    -call tir.setEdges() passing the 3 created lines as parameters. The 3 lines must form an closed triangle else exception is raised.
-    -add the triangle  to scene  and call drawpoints()  
-
-
-Function explanations
-**vertex.updateSelf()** takes 0 parameters, converts real xyz coordines of  the point to screen space (row and column). IF the point is outside the screen (x or y is outside viewable area)
-                                            **prevents** the point from being drawn **until** the next call to updateSelf() during which point is visible 
-                                            
-**vertex.set X/Y/Z(v)** takes 1 parameter,  sets the X/Y/Z coordiante of the vertex to V in real space, requires call to **vertex.updateSelf()**  for changes to take effect
-**vertex.get X/Y/Z()**       takes 0 parameters, returns X/Y/Z coordinate of the vertex in real space
-
+Function explanations<br />
+**vertex.updateSelf()** takes 0 parameters, converts real xyz coordines of  the point to screen space (row and column). IF the point is outside the screen (x or y is outside viewable area)<br />
+                                            **prevents** the point from being drawn **until** the next call to updateSelf() during which point is visible <br />
+                                            <br />
+**vertex.set X/Y/Z(v)** takes 1 parameter,  sets the X/Y/Z coordiante of the vertex to V in real space, requires call to **vertex.updateSelf()**  for changes to take effect<br />
+**vertex.get X/Y/Z()**       takes 0 parameters, returns X/Y/Z coordinate of the vertex in real space<br />
+<br />
 
 
 **line.setEnds(v1, v2)** takes 2 parameters, sets ends of line to v1 and v2 where v1 & v2 are Vertex objects
