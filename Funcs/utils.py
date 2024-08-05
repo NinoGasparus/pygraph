@@ -1,7 +1,9 @@
 from Setup import Setup
+plane =  Setup.plane
+screensize = Setup.screensize
 def visible(x, y):
 
-	if(x > Setup.plane["px"] or x < Setup.plane["nx"] or y > Setup.plane["py"] or y < Setup.plane["ny"]):
+	if(x > plane["px"] or x < plane["nx"] or y > plane["py"] or y < plane["ny"]):
 		return False
 	else: 
 		return True

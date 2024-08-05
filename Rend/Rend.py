@@ -9,7 +9,7 @@ yshrink= Setup.yshrink
 screensize = Setup.screensize
 
 def drawpoints(scene):
-	print("\033[?25l", end ="")
+	print("\033[2J \033[?25l", end ="")
 	print("\033[30m", end ="")
 	#drawing points, lines etc
 	

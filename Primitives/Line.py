@@ -22,7 +22,7 @@ class Line:
 
 	def calcSlope(self):
 		self.stepResolution = self.lenght
-		self.dx = (self.v1.x - self.v2.x)/self.stepResolution
+		self.dx = -(self.v1.x - self.v2.x)/self.stepResolution
 		self.dy = (self.v1.y - self.v2.y)/self.stepResolution
 	
 	def visCheck(self):

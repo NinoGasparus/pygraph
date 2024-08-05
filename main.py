@@ -13,31 +13,35 @@ Setup.init()
 Setup.setSize(-5, 5, -2, 2)
 
 time = -5
+scene = []
 
-def updatePoints(scene):
-    #scene[0].setX(time)
-    #scene[0].updateSelf()
-    pass
+def updatePoints():
+    scene[0].setColor(255,0,0)
+    scene[3].setColor(255,0,0)
+    scene[3].v1.setX(time)
+print("\033[2J \033[?25l")
 while(True):
     
-    #print("\033[2J \033[?25l")
-    #chrono.sleep(0.1)
-    scene = []
-    v = Vertex(-5,0,0)
-    v.setColor(255,0,0)
+    v = Vertex(0,0,0)
     v2 = Vertex(5,0,0)
+    v.setColor(255,0,0)
     v2.setColor(0,255,0)
-
-    l = Line()
-    l.setEnds(v,v2)
-    l.setColor(255,255,0)
     
 
+    
+    l = Line()
+    l.setEnds(Vertex(1,0,0),Vertex(4,0,0))
+    l.calcSlope()
+    scene.insert(0,l)
+          
     scene.insert(0,v)
     scene.insert(0,v2)
-    scene.insert(0,l)
-    Rend.drawpoints(scene)
-    time += 0.001
+    
+    v3 = Vertex(m.cos(time), m.sin(time),0)
+    scene.insert(0,v3)
 
+    Rend.drawpoints(scene)
+    updatePoints()
+    time += 0.01
 
 
